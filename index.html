@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="KHG Gateway" />
+  <meta name="theme-color" content="#080808" />
+  <title>KHG MCP Gateway</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #080808;
+      --surface: #111111;
+      --surface2: #1a1a1a;
+      --border: rgba(255,255,255,0.07);
+      --accent: #FF6B35;
+      --accent-dim: rgba(255,107,53,0.12);
+      --accent-glow: rgba(255,107,53,0.3);
+      --green: #00FF41;
+      --green-dim: rgba(0,255,65,0.12);
+      --red: #FF3B30;
+      --red-dim: rgba(255,59,48,0.12);
+      --yellow: #FFD60A;
+      --yellow-dim: rgba(255,214,10,0.12);
+      --text: #FAFAFA;
+      --muted: #555;
+      --muted2: #333;
+      --font: 'DM Mono', monospace;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      height: 100%;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── APP SHELL ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── STATUS BAR SPACER ── */
+    .status-spacer {
+      height: calc(var(--safe-top) + 8px);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .topbar-logo {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--bg);
+      letter-spacing: -0.5px;
+    }
+    .topbar-title {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .topbar-sub {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-dim);
+      border: 1px solid rgba(0,255,65,0.2);
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--green);
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── SCROLL AREA ── */
+    .scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+    .scroll-area::-webkit-scrollbar { display: none; }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-cell {
+      background: var(--bg);
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--accent);
+      display: block;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* ── SECTION ── */
+    .section {
+      padding: 20px 16px 8px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .section-count {
+      font-size: 10px;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+
+    /* ── CATEGORY CHIPS ── */
+    .chips-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 0 16px 16px;
+      scrollbar-width: none;
+    }
+    .chips-scroll::-webkit-scrollbar { display: none; }
+    .chip {
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 11px;
+      font-family: var(--font);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 150ms ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.02em;
+    }
+    .chip:active { transform: scale(0.96); }
+    .chip.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .chip-count {
+      font-size: 9px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 1px 5px;
+    }
+    .chip.active .chip-count {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    /* ── TOOL CARDS ── */
+    .tools-list {
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tool-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 150ms ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .tool-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 12px 0 0 12px;
+    }
+    .tool-card[data-risk="HIGH"]::before { background: var(--red); }
+    .tool-card[data-risk="MEDIUM"]::before { background: var(--yellow); }
+    .tool-card[data-risk="LOW"]::before { background: var(--green); }
+    .tool-card:active { transform: scale(0.98); border-color: var(--accent); }
+
+    .tool-row1 {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .tool-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.4;
+      flex: 1;
+    }
+    .tool-badge {
+      flex-shrink: 0;
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .badge-high { background: var(--red-dim); color: var(--red); }
+    .badge-medium { background: var(--yellow-dim); color: var(--yellow); }
+    .badge-low { background: var(--green-dim); color: var(--green); }
+
+    .tool-key {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tool-row2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .tool-tag {
+      font-size: 9px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+    }
+    .tool-approval {
+      font-size: 9px;
+      background: rgba(255,214,10,0.1);
+      border: 1px solid rgba(255,214,10,0.2);
+      border-radius: 4px;
+      padding: 2px 6px;
+      color: var(--yellow);
+      letter-spacing: 0.03em;
+      margin-left: auto;
+    }
+
+    /* ── HEALTH CARD ── */
+    .health-card {
+      margin: 16px 16px 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .health-title {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .health-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .health-row:last-child { border-bottom: none; }
+    .health-key { font-size: 11px; color: var(--muted); }
+    .health-val { font-size: 11px; color: var(--text); }
+    .health-val.green { color: var(--green); }
+
+    /* ── CATEGORY BREAKDOWN ── */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 0 16px;
+    }
+    .cat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .cat-card:active { border-color: var(--accent); }
+    .cat-icon { font-size: 18px; margin-bottom: 6px; display: block; }
+    .cat-name {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .cat-count {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .cat-bar {
+      height: 2px;
+      background: var(--surface2);
+      border-radius: 1px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .cat-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 1px;
+      transition: width 500ms ease;
+    }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      display: flex;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding-bottom: var(--safe-bottom);
+      flex-shrink: 0;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 10px 0 8px;
+      cursor: pointer;
+      transition: all 150ms ease;
+      border: none;
+      background: none;
+      color: var(--muted);
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-item:active { opacity: 0.7; }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { font-size: 20px; line-height: 1; }
+    .nav-label { font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    /* ── LOADING ── */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 16px;
+      gap: 12px;
+    }
+    .loading-ring {
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 700ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+    /* ── EMPTY ── */
+    .empty { padding: 48px 16px; text-align: center; color: var(--muted); font-size: 12px; }
+
+    /* ── SEARCH ── */
+    .search-wrap { padding: 12px 16px; }
+    .search-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: var(--font);
+      color: var(--text);
+      outline: none;
+      transition: border-color 150ms;
+    }
+    .search-input::placeholder { color: var(--muted); }
+    .search-input:focus { border-color: var(--accent); }
+
+    /* ── VIEWS ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── GATEWAY INFO ── */
+    .gateway-banner {
+      margin: 16px 16px 0;
+      background: linear-gradient(135deg, rgba(255,107,53,0.08), rgba(255,107,53,0.03));
+      border: 1px solid rgba(255,107,53,0.2);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .gateway-ver {
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .gateway-label {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .gateway-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .uptime-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .uptime-track {
+      flex: 1;
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .uptime-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 2px;
+      width: 100%;
+    }
+    .uptime-pct {
+      font-size: 11px;
+      color: var(--green);
+    }
+
+    .spacer-bottom { height: 16px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="status-spacer"></div>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">KHG</div>
+      <div>
+        <div class="topbar-title">MCP Gateway</div>
+        <div class="topbar-sub" id="last-updated">Loading...</div>
+      </div>
+    </div>
+    <div class="status-pill" id="status-pill">
+      <div class="status-dot"></div>
+      <span id="status-text">—</span>
+    </div>
+  </div>
+
+  <!-- SCROLL AREA -->
+  <div class="scroll-area" id="scroll-area">
+
+    <!-- HOME VIEW -->
+    <div id="view-home" class="view active">
+      <!-- STATS ROW -->
+      <div class="stats-row">
+        <div class="stat-cell">
+          <span class="stat-num" id="stat-tools">—</span>
+          <span class="stat-label">Tools</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num" id="stat-cats">—</span>
+          <span class="stat-label">Cats</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num" id="stat-approval">—</span>
+          <span class="stat-label">Approval</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num" id="stat-workflows">—</span>
+          <span class="stat-label">Flows</span>
+        </div>
+      </div>
+
+      <!-- GATEWAY BANNER -->
+      <div class="gateway-banner">
+        <div class="gateway-ver" id="gw-version">v3.0</div>
+        <div class="gateway-label">MCP Gateway Core</div>
+        <div class="gateway-sub">351 registered tools · 18 categories · 100% uptime</div>
+        <div class="uptime-row">
+          <div class="uptime-track"><div class="uptime-fill" id="uptime-fill"></div></div>
+          <span class="uptime-pct" id="uptime-pct">100%</span>
+        </div>
+      </div>
+
+      <!-- HEALTH CARD -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">System Health</span>
+        </div>
+      </div>
+      <div class="health-card">
+        <div class="health-row">
+          <span class="health-key">Gateway Status</span>
+          <span class="health-val green" id="h-status">—</span>
+        </div>
+        <div class="health-row">
+          <span class="health-key">Version</span>
+          <span class="health-val" id="h-version">—</span>
+        </div>
+        <div class="health-row">
+          <span class="health-key">Total Tools</span>
+          <span class="health-val" id="h-total">—</span>
+        </div>
+        <div class="health-row">
+          <span class="health-key">Active Tools</span>
+          <span class="health-val" id="h-active">—</span>
+        </div>
+        <div class="health-row">
+          <span class="health-key">Approval Queue</span>
+          <span class="health-val" id="h-approval">—</span>
+        </div>
+        <div class="health-row">
+          <span class="health-key">n8n Instance</span>
+          <span class="health-val">dorsey.app.n8n.cloud</span>
+        </div>
+        <div class="health-row">
+          <span class="health-key">Supabase</span>
+          <span class="health-val">dzlmtvodrpyhetv…</span>
+        </div>
+      </div>
+
+      <!-- CATEGORY BREAKDOWN -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Categories</span>
+        </div>
+      </div>
+      <div class="cat-grid" id="cat-grid">
+        <div class="loading"><div class="loading-ring"></div></div>
+      </div>
+      <div class="spacer-bottom"></div>
+    </div>
+
+    <!-- TOOLS VIEW -->
+    <div id="view-tools" class="view">
+      <div class="search-wrap">
+        <input class="search-input" type="search" id="tool-search" placeholder="Search tools..." autocomplete="off" />
+      </div>
+      <!-- FILTER CHIPS -->
+      <div class="chips-scroll" id="chips"></div>
+      <!-- TOOL LIST -->
+      <div class="tools-list" id="tool-list">
+        <div class="loading"><div class="loading-ring"></div><span class="loading-text">Loading tools</span></div>
+      </div>
+      <div class="spacer-bottom"></div>
+    </div>
+
+    <!-- WORKFLOWS VIEW -->
+    <div id="view-flows" class="view">
+      <div class="search-wrap">
+        <input class="search-input" type="search" id="flow-search" placeholder="Search workflows..." autocomplete="off" />
+      </div>
+      <div class="chips-scroll" id="flow-chips"></div>
+      <div class="tools-list" id="flow-list">
+        <div class="loading"><div class="loading-ring"></div><span class="loading-text">Loading workflows</span></div>
+      </div>
+      <div class="spacer-bottom"></div>
+    </div>
+
+  </div><!-- /scroll-area -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-view="home" onclick="switchView('home', this)">
+      <span class="nav-icon">◈</span>
+      <span class="nav-label">Overview</span>
+    </button>
+    <button class="nav-item" data-view="tools" onclick="switchView('tools', this)">
+      <span class="nav-icon">⚡</span>
+      <span class="nav-label">Tools</span>
+    </button>
+    <button class="nav-item" data-view="flows" onclick="switchView('flows', this)">
+      <span class="nav-icon">⟳</span>
+      <span class="nav-label">Workflows</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1ODQ4NjQsImV4cCI6MjA4NTE2MDg2NH0.qmnWB4aWdb7U8Iod9Hv8PQAOJO3AG0vYEGnPS--kfAo';
+
+  const CAT_ICONS = {
+    ops: '⚙️', cron: '⏰', outreach: '📤', mcp: '🔌', social: '📱',
+    linda: '👩', email: '✉️', sos: '🆘', ghl: '🏢', events: '🎪',
+    leads: '🔍', good_times: '🎉', contacts: '📇', content: '🎨',
+    sms: '💬', dept33: '👁️', memory: '🧠', grants: '💰'
+  };
+
+  let allTools = [], allFlows = [], activeToolCat = 'all', activeFlowCat = 'all';
+  let toolCategories = [], flowCategories = [];
+
+  async function query(table, select = '*', extra = '') {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}${extra}`, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!res.ok) throw new Error(`${table}: ${res.status}`);
+    return res.json();
+  }
+
+  async function loadHome() {
+    // Health
+    const health = await query('mcp_gateway_health', '*', '&order=check_time.desc&limit=1');
+    if (health.length) {
+      const h = health[0];
+      document.getElementById('h-status').textContent = h.status?.toUpperCase() || '—';
+      document.getElementById('h-version').textContent = h.gateway_version || '—';
+      document.getElementById('h-total').textContent = h.total_tools || '—';
+      document.getElementById('h-active').textContent = h.callable_tools || '—';
+      document.getElementById('h-approval').textContent = h.approval_required || '0';
+      document.getElementById('gw-version').textContent = h.gateway_version || 'v3.0';
+      document.getElementById('status-text').textContent = h.status?.toUpperCase() || '—';
+      const up = parseFloat(h.uptime_pct) || 100;
+      document.getElementById('uptime-pct').textContent = up + '%';
+      document.getElementById('uptime-fill').style.width = up + '%';
+      document.getElementById('last-updated').textContent = new Date(h.check_time).toLocaleDateString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+
+    // Tool stats
+    const tools = await query('mcp_tool_catalog', 'category,enabled,requires_approval');
+    allTools = tools; // temp
+    const cats = {};
+    tools.forEach(t => {
+      if (!cats[t.category]) cats[t.category] = { count: 0, active: 0 };
+      cats[t.category].count++;
+      if (t.enabled) cats[t.category].active++;
+    });
+    const catList = Object.entries(cats).sort((a,b) => b[1].count - a[1].count);
+    document.getElementById('stat-tools').textContent = tools.length;
+    document.getElementById('stat-cats').textContent = catList.length;
+    document.getElementById('stat-approval').textContent = tools.filter(t => t.requires_approval).length;
+
+    // Render cat grid
+    const maxCount = catList[0]?.[1].count || 1;
+    document.getElementById('cat-grid').innerHTML = catList.map(([cat, info]) => `
+      <div class="cat-card" onclick="goToToolsCat('${cat}')">
+        <span class="cat-icon">${CAT_ICONS[cat] || '🔧'}</span>
+        <div class="cat-name">${cat}</div>
+        <div class="cat-count">${info.count} tools</div>
+        <div class="cat-bar">
+          <div class="cat-bar-fill" style="width:${(info.count/maxCount*100).toFixed(0)}%"></div>
+        </div>
+      </div>
+    `).join('');
+
+    // Workflow count
+    const flows = await query('workflows_registry', 'workflow_id', '&limit=1&select=count');
+    const flowCount = await query('workflows_registry', 'workflow_id');
+    document.getElementById('stat-workflows').textContent = flowCount.length || '—';
+  }
+
+  async function loadTools() {
+    if (allTools.length > 10) { renderTools(); return; } // already loaded
+    allTools = await query('mcp_tool_catalog', 'tool_name,display_name,category,risk_tier,requires_approval,enabled,call_count');
+    buildChips('chips', toolCategories, allTools, 'category', (cat) => {
+      activeToolCat = cat;
+      renderTools();
+    });
+    renderTools();
+  }
+
+  function renderTools(filter='') {
+    const search = filter || document.getElementById('tool-search')?.value || '';
+    let list = allTools;
+    if (activeToolCat !== 'all') list = list.filter(t => t.category === activeToolCat);
+    if (search) list = list.filter(t =>
+      t.display_name?.toLowerCase().includes(search.toLowerCase()) ||
+      t.tool_name?.toLowerCase().includes(search.toLowerCase()) ||
+      t.category?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    if (!list.length) {
+      document.getElementById('tool-list').innerHTML = `<div class="empty">No tools found</div>`;
+      return;
+    }
+
+    document.getElementById('tool-list').innerHTML = list.map(t => {
+      const risk = t.risk_tier || 'LOW';
+      const badgeClass = risk === 'HIGH' ? 'badge-high' : risk === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+      const name = t.display_name || t.tool_name || '—';
+      const cleanName = name.replace(/^[^\|]+\|\s*/, '').replace(/^\[[^\]]+\]\s*/, '');
+      return `
+        <div class="tool-card" data-risk="${risk}">
+          <div class="tool-row1">
+            <div class="tool-name">${cleanName}</div>
+            <span class="tool-badge ${badgeClass}">${risk}</span>
+          </div>
+          <div class="tool-key">${t.tool_name || ''}</div>
+          <div class="tool-row2">
+            <span class="tool-tag">${t.category || '—'}</span>
+            ${t.requires_approval ? `<span class="tool-approval">⚠ APPROVAL</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function loadFlows() {
+    if (allFlows.length > 0) { renderFlows(); return; }
+    allFlows = await query('workflows_registry', 'workflow_key,workflow_name,category,risk_tier,requires_approval,enabled,n8n_workflow_id');
+    buildChips('flow-chips', flowCategories, allFlows, 'category', (cat) => {
+      activeFlowCat = cat;
+      renderFlows();
+    });
+    renderFlows();
+  }
+
+  function renderFlows(filter='') {
+    const search = filter || document.getElementById('flow-search')?.value || '';
+    let list = allFlows;
+    if (activeFlowCat !== 'all') list = list.filter(f => f.category === activeFlowCat);
+    if (search) list = list.filter(f =>
+      f.workflow_name?.toLowerCase().includes(search.toLowerCase()) ||
+      f.workflow_key?.toLowerCase().includes(search.toLowerCase()) ||
+      f.category?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    if (!list.length) {
+      document.getElementById('flow-list').innerHTML = `<div class="empty">No workflows found</div>`;
+      return;
+    }
+
+    document.getElementById('flow-list').innerHTML = list.map(t => {
+      const risk = t.risk_tier || 'LOW';
+      const badgeClass = risk === 'HIGH' ? 'badge-high' : risk === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+      return `
+        <div class="tool-card" data-risk="${risk}">
+          <div class="tool-row1">
+            <div class="tool-name">${t.workflow_name || t.workflow_key || '—'}</div>
+            <span class="tool-badge ${badgeClass}">${risk}</span>
+          </div>
+          <div class="tool-key">ID: ${t.n8n_workflow_id || '—'}</div>
+          <div class="tool-row2">
+            <span class="tool-tag">${t.category || '—'}</span>
+            ${t.requires_approval ? `<span class="tool-approval">⚠ APPROVAL</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function buildChips(containerId, catsArr, data, field, onSelect) {
+    const cats = {};
+    data.forEach(d => {
+      const c = d[field] || 'other';
+      cats[c] = (cats[c] || 0) + 1;
+    });
+    const sorted = Object.entries(cats).sort((a,b) => b[1]-a[1]);
+
+    const el = document.getElementById(containerId);
+    el.innerHTML = `<div class="chip active" onclick="selectChip(this, '${containerId}', 'all')">All <span class="chip-count">${data.length}</span></div>` +
+      sorted.map(([cat, count]) =>
+        `<div class="chip" onclick="selectChip(this, '${containerId}', '${cat}')">${CAT_ICONS[cat] || '🔧'} ${cat} <span class="chip-count">${count}</span></div>`
+      ).join('');
+
+    el._onSelect = onSelect;
+  }
+
+  function selectChip(el, containerId, cat) {
+    document.querySelectorAll(`#${containerId} .chip`).forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    const container = document.getElementById(containerId);
+    if (containerId === 'chips') { activeToolCat = cat; renderTools(); }
+    else { activeFlowCat = cat; renderFlows(); }
+  }
+
+  function goToToolsCat(cat) {
+    activeToolCat = cat;
+    switchView('tools', document.querySelector('[data-view="tools"]'));
+    // After view switches, we need to set the chip
+    setTimeout(() => {
+      const chip = [...document.querySelectorAll('#chips .chip')].find(c => c.textContent.includes(cat));
+      if (chip) selectChip(chip, 'chips', cat);
+    }, 100);
+  }
+
+  function switchView(name, btn) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(`view-${name}`).classList.add('active');
+    btn.classList.add('active');
+    document.getElementById('scroll-area').scrollTo({ top: 0, behavior: 'instant' });
+
+    if (name === 'tools') loadTools();
+    if (name === 'flows') loadFlows();
+  }
+
+  // Search handlers
+  document.getElementById('tool-search').addEventListener('input', e => renderTools(e.target.value));
+  document.getElementById('flow-search').addEventListener('input', e => renderFlows(e.target.value));
+
+  // Init
+  loadHome().catch(err => {
+    console.error(err);
+    document.getElementById('status-text').textContent = 'ERROR';
+    document.getElementById('status-pill').style.background = 'rgba(255,59,48,0.12)';
+    document.getElementById('status-pill').style.borderColor = 'rgba(255,59,48,0.2)';
+    document.getElementById('status-pill').style.color = '#FF3B30';
+    document.querySelector('.status-dot').style.background = '#FF3B30';
+  });
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
