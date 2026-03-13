@@ -510,6 +510,36 @@
     }
 
     .spacer-bottom { height: 16px; }
+
+    /* ── CONTENT APPROVAL ── */
+    .cstat { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center; }
+    .cstat-num { display:block;font-size:20px;font-weight:700; }
+    .cstat-label { font-size:8px;letter-spacing:1.5px;color:var(--muted);margin-top:2px;display:block; }
+    .content-row { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 0.15s; }
+    .content-row:active { border-color:var(--accent); }
+    .content-row-head { display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap; }
+    .content-row-icon { font-size:18px;flex-shrink:0; }
+    .content-row-brand { font-size:9px;padding:2px 8px;border-radius:4px;letter-spacing:0.5px;font-weight:500; }
+    .content-row-type { font-size:9px;padding:2px 8px;border-radius:4px;background:var(--surface2);color:var(--muted); }
+    .content-row-status { font-size:9px;padding:3px 8px;border-radius:4px;letter-spacing:0.5px;font-weight:600; }
+    .content-row-caption { font-size:12px;color:#888;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical; }
+    .content-row-time { font-size:10px;color:var(--muted);margin-top:6px; }
+    .content-row-warn { font-size:8px;padding:2px 6px;border-radius:4px;font-weight:700; }
+    .content-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;display:flex;align-items:flex-end;justify-content:center; }
+    .content-card { background:var(--bg);border-top-left-radius:20px;border-top-right-radius:20px;width:100%;max-width:480px;max-height:92dvh;overflow-y:auto;padding:20px 16px calc(20px + var(--safe-bottom));animation:slideUp 0.25s cubic-bezier(0.16,1,0.3,1); }
+    .content-card-img { width:100%;border-radius:12px;aspect-ratio:1/1;object-fit:cover;background:var(--surface);margin-bottom:14px;display:block; }
+    .content-card-noimg { width:100%;border-radius:12px;aspect-ratio:1/1;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:14px;border:1px dashed var(--border); }
+    .content-card-caption { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;font-size:13px;color:#ccc;line-height:1.7;white-space:pre-wrap;margin-bottom:14px; }
+    .content-card-meta { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px; }
+    .content-card-meta-item { background:var(--surface);border-radius:8px;padding:10px;font-size:11px; }
+    .content-card-meta-label { color:var(--muted);font-size:9px;letter-spacing:1px;display:block;margin-bottom:3px; }
+    .content-card-actions { display:flex;gap:10px; }
+    .content-card-actions button { flex:1;padding:14px;border-radius:10px;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:0.5px;cursor:pointer;border:none; }
+    .btn-approve { background:rgba(0,255,65,0.12);color:#00FF41;border:1px solid rgba(0,255,65,0.2) !important; }
+    .btn-deny { background:var(--red-dim);color:var(--red);border:1px solid rgba(255,59,48,0.2) !important; }
+    .btn-close-card { width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:var(--font);font-size:11px;cursor:pointer;margin-top:10px;letter-spacing:1px; }
+    .content-toast { position:fixed;top:calc(var(--safe-top) + 60px);left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:10px;font-size:12px;font-family:var(--font);z-index:9999;letter-spacing:0.5px; }
+    @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
   </style>
 </head>
 <body>
@@ -642,6 +672,35 @@
       <div class="spacer-bottom"></div>
     </div>
 
+    <!-- CONTENT APPROVAL VIEW -->
+    <div id="view-content" class="view">
+      <!-- Stats Row -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 0 12px;">
+        <div class="cstat"><span class="cstat-num" id="cs-pending" style="color:#FFB300">—</span><span class="cstat-label">PENDING</span></div>
+        <div class="cstat"><span class="cstat-num" id="cs-nocap" style="color:#FF6B35">—</span><span class="cstat-label">NO CAPTION</span></div>
+        <div class="cstat"><span class="cstat-num" id="cs-noimg" style="color:#E91E63">—</span><span class="cstat-label">NO IMAGE</span></div>
+      </div>
+      <!-- Filter Tabs -->
+      <div class="chips-scroll" style="margin-bottom:12px">
+        <div class="chip active" onclick="filterContent('all',this)">ALL</div>
+        <div class="chip" onclick="filterContent('approval',this)">APPROVAL Q</div>
+        <div class="chip" onclick="filterContent('ghl',this)">SOCIAL Q</div>
+      </div>
+      <!-- Brand Filter -->
+      <select id="content-brand-filter" onchange="renderContentList()" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:10px 14px;border-radius:8px;font-family:var(--font);font-size:11px;margin-bottom:12px;-webkit-appearance:none;appearance:none;">
+        <option value="all">ALL BRANDS</option>
+      </select>
+      <!-- Content List -->
+      <div id="content-list">
+        <div class="loading"><div class="loading-ring"></div><span class="loading-text">Loading content</span></div>
+      </div>
+      <!-- Expanded Card Overlay -->
+      <div id="content-overlay" class="content-overlay" style="display:none" onclick="if(event.target===this)closeContentCard()">
+        <div id="content-card" class="content-card"></div>
+      </div>
+      <div class="spacer-bottom"></div>
+    </div>
+
   </div><!-- /scroll-area -->
 
   <!-- BOTTOM NAV -->
@@ -650,13 +709,17 @@
       <span class="nav-icon">◈</span>
       <span class="nav-label">Overview</span>
     </button>
+    <button class="nav-item" data-view="content" onclick="switchView('content', this)">
+      <span class="nav-icon">📸</span>
+      <span class="nav-label">Content</span>
+    </button>
     <button class="nav-item" data-view="tools" onclick="switchView('tools', this)">
       <span class="nav-icon">⚡</span>
       <span class="nav-label">Tools</span>
     </button>
     <button class="nav-item" data-view="flows" onclick="switchView('flows', this)">
       <span class="nav-icon">⟳</span>
-      <span class="nav-label">Workflows</span>
+      <span class="nav-label">Flows</span>
     </button>
   </nav>
 </div>
@@ -872,6 +935,184 @@
 
     if (name === 'tools') loadTools();
     if (name === 'flows') loadFlows();
+    if (name === 'content') loadContent();
+  }
+
+  // ── CONTENT APPROVAL SYSTEM ──
+  const SB_SRK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTAzNjE1NywiZXhwIjoyMDU2NjEyMTU3fQ.yFYfE0E7weMxSmBRb_Qm0P2715sZzBBvcepsFYvJJMM';
+  const SRK_H = { 'apikey': SB_SRK, 'Authorization': 'Bearer ' + SB_SRK, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+  let contentItems = [];
+  let contentFilter = 'all';
+  const TI = {ig_post:'📸',ig_story:'📱',ig_reel:'🎬',ig_dm:'💬',email_blast:'📧',sms_blast:'📲',comment_drop:'💭',sponsor_deck:'📊',pr_pitch:'📰',feed:'📸',reel:'🎬',story:'📱',carousel:'🎠'};
+  const BC = {'taste-of-art':'#D4A574','taste_of_art':'#D4A574',noir:'#8B7FD4','forever-futbol':'#4CAF50',forever_futbol:'#4CAF50','casper-group':'#607D8B',casper_group:'#607D8B','good-times':'#FF9800',good_times:'#FF9800','dr-dorsey':'#FF6B35',dr_dorsey:'#FF6B35',paparazzi:'#E91E63',pawchella:'#8BC34A','pasta-bish':'#FF5722',pasta_bish:'#FF5722','angel-wings':'#9C27B0',angel_wings:'#9C27B0','mind-studio':'#00BCD4',mind_studio:'#00BCD4',huglife:'#F44336','infinity-water':'#2196F3',infinity_water:'#2196F3','pronto-energy':'#FFC107',pronto_energy:'#FFC107','napkin-king':'#795548','espresso-event':'#3E2723',espresso_co:'#3E2723','shut-up-dance':'#FF1744','sundays-best':'#FFD700',sundays_best:'#FFD700','gangsta-gospel':'#1A1A1A',gangsta_gospel:'#444',wrst_bhvr:'#795548',remix:'#9C27B0',noir_event:'#8B7FD4',mojo_juice:'#8BC34A',morning_after:'#FF9800',mr_oyster:'#607D8B',sweet_tooth:'#E91E63',stush:'#9C27B0',sos:'#2196F3',umbrella_injury:'#4CAF50'};
+  const SC = {pending:{bg:'rgba(255,179,0,0.12)',fg:'#FFB300',l:'PENDING'},queued:{bg:'rgba(124,139,255,0.12)',fg:'#7C8BFF',l:'QUEUED'},approved:{bg:'rgba(0,255,65,0.12)',fg:'#00FF41',l:'APPROVED'},denied:{bg:'rgba(255,59,48,0.12)',fg:'#FF3B30',l:'DENIED'}};
+
+  async function loadContent() {
+    const list = document.getElementById('content-list');
+    list.innerHTML = '<div class="loading"><div class="loading-ring"></div><span class="loading-text">Loading content</span></div>';
+    try {
+      const [aq, ghl] = await Promise.all([
+        fetch(SUPABASE_URL+'/rest/v1/approval_queue?order=created_at.desc&limit=50', {headers:SRK_H}).then(r=>r.json()),
+        fetch(SUPABASE_URL+'/rest/v1/ghl_social_posting_queue?status=in.(pending,queued,draft,scheduled)&order=scheduled_for.asc&limit=80', {headers:SRK_H}).then(r=>r.json())
+      ]);
+      const aqItems = (Array.isArray(aq)?aq:[]).map(i=>({...i,_src:'approval'}));
+      const ghlItems = (Array.isArray(ghl)?ghl:[]).map(i=>({...i,_src:'ghl',item_type:i.content_type,title:((i.brand_key||'')+(i.platform?' '+i.platform:'')+(i.content_type?' '+i.content_type:'')).toUpperCase()}));
+      contentItems = [...aqItems,...ghlItems];
+      // Stats
+      const pend = aqItems.filter(i=>i.status==='pending').length + ghlItems.filter(i=>i.status==='pending').length;
+      const noCap = ghlItems.filter(i=>!i.caption).length;
+      const noImg = ghlItems.filter(i=>!i.image_url&&(!i.media_urls||!i.media_urls.length)).length;
+      document.getElementById('cs-pending').textContent = pend;
+      document.getElementById('cs-nocap').textContent = noCap;
+      document.getElementById('cs-noimg').textContent = noImg;
+      // Brand filter
+      const brands = [...new Set(contentItems.map(i=>i.brand_key).filter(Boolean))].sort();
+      const sel = document.getElementById('content-brand-filter');
+      sel.innerHTML = '<option value="all">ALL BRANDS</option>' + brands.map(b=>'<option value="'+b+'">'+b.toUpperCase().replace(/[-_]/g,' ')+'</option>').join('');
+      renderContentList();
+    } catch(e) {
+      list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Failed to load: '+e.message+'</div>';
+    }
+  }
+
+  function filterContent(f, el) {
+    contentFilter = f;
+    document.querySelectorAll('#view-content .chip').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active');
+    renderContentList();
+  }
+
+  function renderContentList() {
+    const brand = document.getElementById('content-brand-filter').value;
+    let items = contentItems;
+    if (contentFilter === 'approval') items = items.filter(i=>i._src==='approval');
+    if (contentFilter === 'ghl') items = items.filter(i=>i._src==='ghl');
+    if (brand !== 'all') items = items.filter(i=>i.brand_key===brand);
+
+    const list = document.getElementById('content-list');
+    if (!items.length) { list.innerHTML='<div style="padding:30px;text-align:center;color:var(--muted)">No content</div>'; return; }
+
+    list.innerHTML = items.map((item, idx) => {
+      const bk = item.brand_key||'';
+      const bc = BC[bk] || '#FF6B35';
+      const sc = SC[item.status] || SC.pending;
+      const icon = TI[item.item_type||item.content_type] || '📄';
+      const caption = item.caption || item.content_preview || item.preview || '';
+      const hasCap = !!caption;
+      const hasImg = !!(item.image_url || (item.media_urls && item.media_urls.length));
+      const time = item.scheduled_for || item.created_at;
+      const fmtTime = time ? new Date(time).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+
+      return '<div class="content-row" onclick="openContentCard('+idx+')">' +
+        '<div class="content-row-head">' +
+          '<span class="content-row-icon">'+icon+'</span>' +
+          '<span class="content-row-brand" style="background:'+bc+'22;color:'+bc+'">'+bk.toUpperCase().replace(/[-_]/g,' ')+'</span>' +
+          '<span class="content-row-type">'+(item.item_type||item.content_type||'').toUpperCase().replace(/_/g,' ')+'</span>' +
+          (!hasCap?'<span class="content-row-warn" style="background:rgba(255,107,53,0.15);color:#FF6B35">NO CAP</span>':'') +
+          (!hasImg?'<span class="content-row-warn" style="background:rgba(233,30,99,0.15);color:#E91E63">NO IMG</span>':'') +
+        '</div>' +
+        (hasCap ? '<div class="content-row-caption">'+caption.slice(0,120)+'</div>' : '') +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">' +
+          '<span class="content-row-time">'+fmtTime+'</span>' +
+          '<span class="content-row-status" style="background:'+sc.bg+';color:'+sc.fg+'">'+sc.l+'</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function openContentCard(idx) {
+    const brand = document.getElementById('content-brand-filter').value;
+    let items = contentItems;
+    if (contentFilter === 'approval') items = items.filter(i=>i._src==='approval');
+    if (contentFilter === 'ghl') items = items.filter(i=>i._src==='ghl');
+    if (brand !== 'all') items = items.filter(i=>i.brand_key===brand);
+    const item = items[idx];
+    if (!item) return;
+
+    const bk = item.brand_key||'';
+    const bc = BC[bk]||'#FF6B35';
+    const sc = SC[item.status]||SC.pending;
+    const caption = item.caption||item.content_preview||item.preview||'';
+    const imgUrl = item.image_url || (item.media_urls && item.media_urls.length ? item.media_urls[0] : '');
+    const isPending = item.status === 'pending';
+    const table = item._src === 'approval' ? 'approval_queue' : 'ghl_social_posting_queue';
+    const idVal = item.id;
+    const titleText = item.title || (bk.toUpperCase().replace(/[-_]/g,' ') + ' ' + (item.item_type||item.content_type||'').toUpperCase());
+
+    let html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+      '<span style="font-size:9px;letter-spacing:2px;color:var(--muted)">CONTENT PREVIEW</span>' +
+      '<span class="content-row-brand" style="background:'+bc+'22;color:'+bc+'">'+bk.toUpperCase().replace(/[-_]/g,' ')+'</span>' +
+    '</div>';
+
+    // Image
+    if (imgUrl) {
+      html += '<img class="content-card-img" src="'+imgUrl+'" onerror="this.style.display=\'none\'" />';
+    } else {
+      html += '<div class="content-card-noimg"><span style="font-size:32px;opacity:0.2">🖼</span><span style="font-size:10px;color:var(--muted);margin-top:6px">NO IMAGE</span></div>';
+    }
+
+    // Title
+    html += '<div style="font-size:14px;font-weight:600;color:#e0e0e0;margin-bottom:10px">'+titleText+'</div>';
+
+    // Caption
+    html += '<div class="content-card-caption">'+(caption||'No caption written')+'</div>';
+
+    // Meta
+    html += '<div class="content-card-meta">';
+    html += '<div class="content-card-meta-item"><span class="content-card-meta-label">STATUS</span><span style="color:'+sc.fg+'">'+sc.l+'</span></div>';
+    html += '<div class="content-card-meta-item"><span class="content-card-meta-label">TYPE</span>'+(item.item_type||item.content_type||'—').toUpperCase()+'</div>';
+    if (item.score) html += '<div class="content-card-meta-item"><span class="content-card-meta-label">SCORE</span>'+item.score+'</div>';
+    if (item.scheduled_for) html += '<div class="content-card-meta-item"><span class="content-card-meta-label">SCHEDULED</span>'+new Date(item.scheduled_for).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'</div>';
+    if (item.target) html += '<div class="content-card-meta-item"><span class="content-card-meta-label">TARGET</span><span style="color:#888">'+item.target+'</span></div>';
+    if (item.channel) html += '<div class="content-card-meta-item"><span class="content-card-meta-label">CHANNEL</span><span style="color:#888">'+item.channel+'</span></div>';
+    html += '</div>';
+
+    // Actions
+    if (isPending) {
+      html += '<div class="content-card-actions">' +
+        '<button class="btn-approve" onclick="contentAction(\''+table+'\',\''+idVal+'\',\'approved\',\''+titleText.replace(/'/g,"\\'")+'\')">✓ APPROVE</button>' +
+        '<button class="btn-deny" onclick="contentAction(\''+table+'\',\''+idVal+'\',\'denied\',\''+titleText.replace(/'/g,"\\'")+'\')">✕ DENY</button>' +
+      '</div>';
+    } else {
+      html += '<div style="text-align:center;padding:10px;color:var(--muted);font-size:11px">Reviewed'+(item.reviewed_by?' by '+item.reviewed_by:'')+'</div>';
+    }
+    html += '<button class="btn-close-card" onclick="closeContentCard()">CLOSE</button>';
+
+    document.getElementById('content-card').innerHTML = html;
+    document.getElementById('content-overlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeContentCard() {
+    document.getElementById('content-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  async function contentAction(table, id, status, title) {
+    try {
+      const body = table === 'approval_queue'
+        ? {status, reviewed_by:'Dr. Dorsey', reviewed_at:new Date().toISOString()}
+        : {status};
+      await fetch(SUPABASE_URL+'/rest/v1/'+table+'?id=eq.'+id, {
+        method:'PATCH', headers:SRK_H, body:JSON.stringify(body)
+      });
+      closeContentCard();
+      showContentToast(status.toUpperCase()+': '+title, status==='approved');
+      loadContent();
+    } catch(e) {
+      showContentToast('FAILED: '+e.message, false);
+    }
+  }
+
+  function showContentToast(msg, isGood) {
+    const t = document.createElement('div');
+    t.className = 'content-toast';
+    t.style.background = isGood ? 'rgba(0,255,65,0.15)' : 'rgba(255,59,48,0.15)';
+    t.style.color = isGood ? '#00FF41' : '#FF3B30';
+    t.style.border = '1px solid '+(isGood?'rgba(0,255,65,0.3)':'rgba(255,59,48,0.3)');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(), 2500);
   }
 
   // Search handlers
